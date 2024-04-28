@@ -4,6 +4,17 @@ from simple_term_menu import TerminalMenu
 from model_enums import ColumnsEnums
 
 
+def goodbye():
+    exit("\nSee you later, buddy 👋")
+
+
+def generate_menu(list_of_options: list):
+    options = []
+    for index, option in enumerate(list_of_options):
+        options.append(f"[{index + 1}] - {list_of_options[index][0]}")
+    return options
+
+
 def _select_multi_choice(options: list, title: str) -> list:
     terminal_menu = TerminalMenu(
         options,
@@ -14,6 +25,7 @@ def _select_multi_choice(options: list, title: str) -> list:
     terminal_menu.show()
     return list(terminal_menu.chosen_menu_entries)
 
+
 def _select_single_choice(options: list, title: str):
     terminal_menu = TerminalMenu(
         options,
@@ -22,6 +34,16 @@ def _select_single_choice(options: list, title: str):
     )
     index = terminal_menu.show()
     return options[index]
+
+
+def _select_single_choice_index(options: list, title: str):
+    terminal_menu = TerminalMenu(
+        options,
+        title=title,
+        show_multi_select_hint=True,
+    )
+    index = terminal_menu.show()
+    return index
 
 
 def _filter_by_col_value(df: DataFrame, col_to_filter: str, msg_to_user):

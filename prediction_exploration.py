@@ -4,7 +4,7 @@ from pandas import DataFrame
 from data_encoder import get_unencoded_keys_from_mapping, get_encoded_values
 from model import predict
 from model_enums import TargetEnums, ColumnsEnums
-from utils import _select_multi_choice, _select_single_choice
+from utils import _select_multi_choice, _select_single_choice, _select_single_choice_index, goodbye
 
 
 def _filter_df_by_columns(df: DataFrame, cols: list):
@@ -33,7 +33,7 @@ def _add_revenue(df: DataFrame):
     df_with_revenue: DataFrame = df.copy()
     for index, row in df.iterrows():
         df_with_revenue.loc[index, 'revenue_by_absolute_sum'] = _absolute_sum(row)
-        df_with_revenue.loc[index, 'revenue_by_percentage'] = _diff_by_percantege(row)
+        df_with_revenue.loc[index, 'revenue_by_percentage'] = _diff_by_percentage(row)
 
     return df_with_revenue
 
@@ -58,10 +58,10 @@ def _show_top_3_revenue(df_with_revenue: DataFrame):
 
 def _absolute_sum(row):
     avg_price = int(round(float(row["avg_price"]), 2) * 1000)
-    return row["2024_prediction"] - avg_price
+    return int(round(row["2024_prediction"] - avg_price))
 
 
-def _diff_by_percantege(row):
+def _diff_by_percentage(row):
     avg_price = int(round(float(row["avg_price"]), 2) * 1000)
     percentage = (row["2024_prediction"] / avg_price) * 100
 
@@ -121,85 +121,149 @@ def _predict_by_single_feature_for_revenue(model, mapping: dict, df: DataFrame):
 
 
 def predict_by_city(model, mapping: dict):
-    predictions, cities, rooms = _predict_by_feature(model, mapping, ColumnsEnums.CITY, "Available cities:")
+    while True:
+        predictions, cities, rooms = _predict_by_feature(model, mapping, ColumnsEnums.CITY, "Available cities:")
 
-    prediction_index = 0
-    for city in cities:
-        print(f"\nHere are the {TargetEnums.YEAR_FOR_PREDICTION} predictions for {city}:")
-        for room_type in rooms:
-            print(f"{room_type} rooms apartment is predicted to cost: {predictions[prediction_index]} ₪")
-            prediction_index += 1
-    print()
+        prediction_index = 0
+        for city in cities:
+            print(f"\nHere are the {TargetEnums.YEAR_FOR_PREDICTION} predictions for {city}:")
+            for room_type in rooms:
+                print(f"{room_type} rooms apartment is predicted to cost: {predictions[prediction_index]} ₪")
+                prediction_index += 1
+
+        print("\nAny thing else I can help you with?")
+        sub_menu_options = ["Lets see other city prediction ","Main Menu","Exit"]
+        index = _select_single_choice_index(sub_menu_options, "Please select:")
+        match index:
+            case 0:
+                predict_by_city(model, mapping)
+            case 1:
+                from housely import start
+                start()
+            case 2:
+                goodbye()
+
 
 
 def predict_by_number_of_rooms(model, mapping: dict):
-    predictions, rooms, cities = _predict_by_feature(model, mapping, ColumnsEnums.NUMBER_OF_ROOMS,
-                                                     "Available number of rooms:")
+    while True:
+        predictions, rooms, cities = _predict_by_feature(model, mapping, ColumnsEnums.NUMBER_OF_ROOMS,
+                                                         "Available number of rooms:")
 
-    prediction_index = 0
-    for room_type in rooms:
-        print(f"\nHere are the {TargetEnums.YEAR_FOR_PREDICTION} predictions for {room_type} rooms, by city:")
-        for city in cities:
-            print(f"In {city} this type of apartment is predicted to cost: {predictions[prediction_index]} ₪")
-            prediction_index += 1
-    print()
+        prediction_index = 0
+        for room_type in rooms:
+            print(f"\nHere are the {TargetEnums.YEAR_FOR_PREDICTION} predictions for {room_type} rooms, by city:")
+            for city in cities:
+                print(f"In {city} this type of apartment is predicted to cost: {predictions[prediction_index]} ₪")
+                prediction_index += 1
+
+        print("\nAny thing else I can help you with?")
+        sub_menu_options = ["Lets see other room types prediction ","Main Menu","Exit"]
+        index = _select_single_choice_index(sub_menu_options, "Please select:")
+        match index:
+            case 0:
+                predict_by_number_of_rooms(model, mapping)
+            case 1:
+                from housely import start
+                start()
+            case 2:
+                goodbye()
 
 
 def predict_by_district(model, mapping: dict, df: DataFrame):
-    unique_districts: list = df[ColumnsEnums.DISTRICT].unique().tolist()
-    selected_districts: list = _select_multi_choice(unique_districts, "Available districts:")
+    while True:
+        unique_districts: list = df[ColumnsEnums.DISTRICT].unique().tolist()
+        selected_districts: list = _select_multi_choice(unique_districts, "Available districts:")
 
-    condition_district = df[ColumnsEnums.DISTRICT].isin(selected_districts)
-    df_filtered: DataFrame = df[condition_district]
-    cities_in_district: list = df_filtered[ColumnsEnums.CITY].unique().tolist()
+        condition_district = df[ColumnsEnums.DISTRICT].isin(selected_districts)
+        df_filtered: DataFrame = df[condition_district]
+        cities_in_district: list = df_filtered[ColumnsEnums.CITY].unique().tolist()
 
-    cities_in_district_encoded: list = get_encoded_values(cities_in_district, mapping, ColumnsEnums.CITY)
-    list_of_rooms: list = get_unencoded_keys_from_mapping(mapping, ColumnsEnums.NUMBER_OF_ROOMS)
-    room_types_encoded: list = get_encoded_values(list_of_rooms, mapping, ColumnsEnums.NUMBER_OF_ROOMS)
+        cities_in_district_encoded: list = get_encoded_values(cities_in_district, mapping, ColumnsEnums.CITY)
+        list_of_rooms: list = get_unencoded_keys_from_mapping(mapping, ColumnsEnums.NUMBER_OF_ROOMS)
+        room_types_encoded: list = get_encoded_values(list_of_rooms, mapping, ColumnsEnums.NUMBER_OF_ROOMS)
 
-    predictions = predict(model, cities_in_district_encoded, room_types_encoded, ColumnsEnums.CITY)
+        predictions = predict(model, cities_in_district_encoded, room_types_encoded, ColumnsEnums.CITY)
 
-    prediction_index = 0
-    for city in cities_in_district:
-        print(f"\nHere are the {TargetEnums.YEAR_FOR_PREDICTION} predictions for {city}:")
-        for room_type in list_of_rooms:
-            print(f"{room_type} rooms apartment is predicted to cost: {predictions[prediction_index]} ₪")
-            prediction_index += 1
+        prediction_index = 0
+        for city in cities_in_district:
+            print(f"\nHere are the {TargetEnums.YEAR_FOR_PREDICTION} predictions for {city}:")
+            for room_type in list_of_rooms:
+                print(f"{room_type} rooms apartment is predicted to cost: {predictions[prediction_index]} ₪")
+                prediction_index += 1
 
+        print("\nAny thing else I can help you with?")
+        sub_menu_options = ["Lets see other districts prediction ","Main Menu","Exit"]
+        index = _select_single_choice_index(sub_menu_options, "Please select:")
+        match index:
+            case 0:
+                predict_by_district(model, mapping, df)
+            case 1:
+                from housely import start
+                start()
+            case 2:
+                goodbye()
 
 def get_best_revenue_prediction(model, mapping: dict, df: DataFrame):
-    df_with_revenue: DataFrame = _predict_by_single_feature_for_revenue(model, mapping, df)
-    _show_top_3_revenue(df_with_revenue)
+    while True:
+        df_with_revenue: DataFrame = _predict_by_single_feature_for_revenue(model, mapping, df)
+        _show_top_3_revenue(df_with_revenue)
+
+        print("\nAny thing else I can help you with?")
+        sub_menu_options = ["Lets see other revenue prediction ","Main Menu","Exit"]
+        index = _select_single_choice_index(sub_menu_options, "Please select:")
+        match index:
+            case 0:
+                get_best_revenue_prediction(model, mapping, df)
+            case 1:
+                from housely import start
+                start()
+            case 2:
+                goodbye()
 
 
 def get_apartments_by_user_asset(model, df: DataFrame):
-    is_valid_input = False
-    price_by_user = 0
-    while not is_valid_input:
-        try:
-            user_input = input("Please enter the price in ₪ you are willing to pay, like 850000 or 2800000: ")
-            price_by_user = int(user_input)
-            is_valid_input = True
-        except Exception as e:
-            print("That is not a valid amount. Try again")
+    while True:
+        is_valid_input = False
+        price_by_user = 0
+        while not is_valid_input:
+            try:
+                user_input = input("Please enter the price in ₪ you are willing to pay, like 850000 or 2800000: ")
+                price_by_user = int(user_input)
+                is_valid_input = True
+            except Exception as e:
+                print("That is not a valid amount. Try again")
 
-    predictions = model.predict(df[["num_of_rooms_encoded", "city_encoded", "year"]])
-    predictions_rounded = list(map(lambda x: int(x.round(2) * 1000), predictions))
+        predictions = model.predict(df[["num_of_rooms_encoded", "city_encoded", "year"]])
+        predictions_rounded = list(map(lambda x: int(x.round(2) * 1000), predictions))
 
-    df["2024_prediction"] = predictions_rounded
-    past_year_condition = df[ColumnsEnums.YEAR] == 2023
-    price_condition = df["2024_prediction"] <= price_by_user
-    df_filtered = df[price_condition & past_year_condition]
+        df["2024_prediction"] = predictions_rounded
+        past_year_condition = df[ColumnsEnums.YEAR] == 2023
+        price_condition = df["2024_prediction"] <= price_by_user
+        df_filtered = df[price_condition & past_year_condition]
 
-    options = ["Show me top 3 most profitable apartments", "Show me all the apartments I can buy"]
-    user_selection = _select_single_choice(options, "What would you like to see?")
+        options = ["Show me top 3 most profitable apartments", "Show me all the apartments I can buy"]
+        user_selection = _select_single_choice(options, "What would you like to see?")
 
-    if user_selection == "Show me top 3 most profitable apartments":
-        df_with_revenue: DataFrame = _add_revenue(df_filtered)
-        _show_top_3_revenue(df_with_revenue)
+        if user_selection == "Show me top 3 most profitable apartments":
+            df_with_revenue: DataFrame = _add_revenue(df_filtered)
+            _show_top_3_revenue(df_with_revenue)
 
-    if user_selection == "Show me all the apartments I can buy":
-        filtered_df_no_dup: DataFrame = df_filtered.drop_duplicates(subset=['city', 'num_of_rooms'])
-        for index, row in filtered_df_no_dup.iterrows():
-            print(
-                f"You can buy a {row[ColumnsEnums.NUMBER_OF_ROOMS]} apartment in {row[ColumnsEnums.CITY]} for estimated price of {row['2024_prediction']}")
+        if user_selection == "Show me all the apartments I can buy":
+            filtered_df_no_dup: DataFrame = df_filtered.drop_duplicates(subset=['city', 'num_of_rooms'])
+            for index, row in filtered_df_no_dup.iterrows():
+                print(
+                    f"You can buy a {row[ColumnsEnums.NUMBER_OF_ROOMS]} apartment in {row[ColumnsEnums.CITY]} for "
+                    f"estimated price of {row['2024_prediction']}")
+
+        print("\nAny thing else I can help you with?")
+        sub_menu_options = ["Lets see other apartments prediction ","Main Menu","Exit"]
+        index = _select_single_choice_index(sub_menu_options, "Please select:")
+        match index:
+            case 0:
+                get_apartments_by_user_asset(model, df)
+            case 1:
+                from housely import start
+                start()
+            case 2:
+                goodbye()
