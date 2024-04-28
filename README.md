@@ -22,7 +22,7 @@ python3 housely.py
 * Find suitable house for you, based on the model prediction
 * Use the prediction to predict the best revenue you can make
 
-### The date:
+### The data:
 House pricing from 2019 to 2023 as published by The Israel Central Bureau of Statistics
 
 ### The model:
