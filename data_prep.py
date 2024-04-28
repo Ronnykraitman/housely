@@ -3,6 +3,9 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 import os
 
+from data_encoder import encode_data
+from model_enums import PredictorsEnums
+
 
 def load_data():
     script_dir = os.path.dirname(__file__)
@@ -32,3 +35,10 @@ def split_data(df: DataFrame, test_ration=0.15):
     test: DataFrame = input_for_test.join(output_for_test)
 
     return train, test
+
+def prepare_data_for_prediction():
+    df_raw: DataFrame = load_data()
+    df_no_nulls = drop_nulls(df_raw)
+    df, mapping = encode_data(df_no_nulls, [PredictorsEnums.NUMBER_OF_ROOMS, PredictorsEnums.CITY])
+
+    return df, mapping

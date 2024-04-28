@@ -14,6 +14,15 @@ def _select_multi_choice(options: list, title: str) -> list:
     terminal_menu.show()
     return list(terminal_menu.chosen_menu_entries)
 
+def _select_single_choice(options: list, title: str):
+    terminal_menu = TerminalMenu(
+        options,
+        title=title,
+        show_multi_select_hint=True,
+    )
+    index = terminal_menu.show()
+    return options[index]
+
 
 def _filter_by_col_value(df: DataFrame, col_to_filter: str, msg_to_user):
     list_of_unique_values: list = df[col_to_filter].unique().tolist()
