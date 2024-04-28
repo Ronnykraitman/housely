@@ -36,6 +36,7 @@ def split_data(df: DataFrame, test_ration=0.15):
 
     return train, test
 
+
 def prepare_data_for_prediction():
     df_raw: DataFrame = load_data()
     df_no_nulls = drop_nulls(df_raw)

@@ -45,7 +45,8 @@ def _show_top_3_revenue(df_with_revenue: DataFrame):
     print("\nHere are the top 3 apartments, by absolute revenue")
     for i, row in top_3_rows_by_value.iterrows():
         print(
-            f"Apartment in {row[ColumnsEnums.CITY]} with {row[ColumnsEnums.NUMBER_OF_ROOMS]} rooms will get you {row["revenue_by_absolute_sum"]} ₪ revenue")
+            f"Apartment in {row[ColumnsEnums.CITY]} with {row[ColumnsEnums.NUMBER_OF_ROOMS]} rooms will get you "
+            f"{row["revenue_by_absolute_sum"]} ₪ revenue")
 
     sorted_df_by_per = df_with_revenue.sort_values(by='revenue_by_percentage', ascending=False)
     top_3_rows_by_per = sorted_df_by_per.head(3)
@@ -53,7 +54,8 @@ def _show_top_3_revenue(df_with_revenue: DataFrame):
     print("\nHere are the top 3 apartments, by percentage revenue")
     for i, row in top_3_rows_by_per.iterrows():
         print(
-            f"Apartment in {row[ColumnsEnums.CITY]} with {row[ColumnsEnums.NUMBER_OF_ROOMS]} rooms will get you {row["revenue_by_percentage"]}% revenue")
+            f"Apartment in {row[ColumnsEnums.CITY]} with {row[ColumnsEnums.NUMBER_OF_ROOMS]} rooms will get you "
+            f"{row["revenue_by_percentage"]}% revenue")
 
 
 def _absolute_sum(row):
@@ -132,7 +134,7 @@ def predict_by_city(model, mapping: dict):
                 prediction_index += 1
 
         print("\nAny thing else I can help you with?")
-        sub_menu_options = ["Lets see other city prediction ","Main Menu","Exit"]
+        sub_menu_options = ["Lets see other city prediction ", "Main Menu", "Exit"]
         index = _select_single_choice_index(sub_menu_options, "Please select:")
         match index:
             case 0:
@@ -142,7 +144,6 @@ def predict_by_city(model, mapping: dict):
                 start()
             case 2:
                 goodbye()
-
 
 
 def predict_by_number_of_rooms(model, mapping: dict):
@@ -158,7 +159,7 @@ def predict_by_number_of_rooms(model, mapping: dict):
                 prediction_index += 1
 
         print("\nAny thing else I can help you with?")
-        sub_menu_options = ["Lets see other room types prediction ","Main Menu","Exit"]
+        sub_menu_options = ["Lets see other room types prediction ", "Main Menu", "Exit"]
         index = _select_single_choice_index(sub_menu_options, "Please select:")
         match index:
             case 0:
@@ -193,7 +194,7 @@ def predict_by_district(model, mapping: dict, df: DataFrame):
                 prediction_index += 1
 
         print("\nAny thing else I can help you with?")
-        sub_menu_options = ["Lets see other districts prediction ","Main Menu","Exit"]
+        sub_menu_options = ["Lets see other districts prediction ", "Main Menu", "Exit"]
         index = _select_single_choice_index(sub_menu_options, "Please select:")
         match index:
             case 0:
@@ -204,13 +205,14 @@ def predict_by_district(model, mapping: dict, df: DataFrame):
             case 2:
                 goodbye()
 
+
 def get_best_revenue_prediction(model, mapping: dict, df: DataFrame):
     while True:
         df_with_revenue: DataFrame = _predict_by_single_feature_for_revenue(model, mapping, df)
         _show_top_3_revenue(df_with_revenue)
 
         print("\nAny thing else I can help you with?")
-        sub_menu_options = ["Lets see other revenue prediction ","Main Menu","Exit"]
+        sub_menu_options = ["Lets see other revenue prediction ", "Main Menu", "Exit"]
         index = _select_single_choice_index(sub_menu_options, "Please select:")
         match index:
             case 0:
@@ -231,7 +233,7 @@ def get_apartments_by_user_asset(model, df: DataFrame):
                 user_input = input("Please enter the price in ₪ you are willing to pay, like 850000 or 2800000: ")
                 price_by_user = int(user_input)
                 is_valid_input = True
-            except Exception as e:
+            except Exception:
                 print("That is not a valid amount. Try again")
 
         predictions = model.predict(df[["num_of_rooms_encoded", "city_encoded", "year"]])
@@ -257,7 +259,7 @@ def get_apartments_by_user_asset(model, df: DataFrame):
                     f"estimated price of {row['2024_prediction']}")
 
         print("\nAny thing else I can help you with?")
-        sub_menu_options = ["Lets see other apartments prediction ","Main Menu","Exit"]
+        sub_menu_options = ["Lets see other apartments prediction ", "Main Menu", "Exit"]
         index = _select_single_choice_index(sub_menu_options, "Please select:")
         match index:
             case 0:

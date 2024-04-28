@@ -7,7 +7,6 @@ from prediction_exploration import predict_by_city, predict_by_number_of_rooms, 
     get_apartments_by_user_asset, get_best_revenue_prediction
 from utils import goodbye, generate_menu, _select_single_choice_index
 
-
 logo = r'''
 Welcome to
   _   _                      _          
@@ -47,8 +46,6 @@ def start():
             ml_predictions[index][1]()
         case _:
             ml_predictions[index][1](model, mapping)
-
-
 
 
 if __name__ == "__main__":
