@@ -6,10 +6,6 @@ from model import predict
 from model_enums import TargetEnums, ColumnsEnums
 from utils import _select_multi_choice, _select_single_choice
 
-'''
-6. tell me how much you have and I'll tell you where to invest
-'''
-
 
 def _filter_df_by_columns(df: DataFrame, cols: list):
     cols.append(ColumnsEnums.PREDICTIONS)
@@ -28,6 +24,100 @@ def _predict_by_feature(model, mapping: dict, predict_by_feature: str, user_msg:
     predictions = predict(model, selected_feature_values_encoded, second_feature_values_encoded, predict_by_feature)
 
     return predictions, selected_values, list_of_second_feature_values
+
+
+def _add_revenue(df: DataFrame):
+    df.assign(revenue_by_percentage=None)
+    df.assign(revenue_by_absolute_sum=None)
+
+    df_with_revenue: DataFrame = df.copy()
+    for index, row in df.iterrows():
+        df_with_revenue.loc[index, 'revenue_by_absolute_sum'] = _absolute_sum(row)
+        df_with_revenue.loc[index, 'revenue_by_percentage'] = _diff_by_percantege(row)
+
+    return df_with_revenue
+
+
+def _show_top_3_revenue(df_with_revenue: DataFrame):
+    sorted_df_by_value = df_with_revenue.sort_values(by='revenue_by_absolute_sum', ascending=False)
+    top_3_rows_by_value = sorted_df_by_value.head(3)
+
+    print("\nHere are the top 3 apartments, by absolute revenue")
+    for i, row in top_3_rows_by_value.iterrows():
+        print(
+            f"Apartment in {row[ColumnsEnums.CITY]} with {row[ColumnsEnums.NUMBER_OF_ROOMS]} rooms will get you {row["revenue_by_absolute_sum"]} ₪ revenue")
+
+    sorted_df_by_per = df_with_revenue.sort_values(by='revenue_by_percentage', ascending=False)
+    top_3_rows_by_per = sorted_df_by_per.head(3)
+
+    print("\nHere are the top 3 apartments, by percentage revenue")
+    for i, row in top_3_rows_by_per.iterrows():
+        print(
+            f"Apartment in {row[ColumnsEnums.CITY]} with {row[ColumnsEnums.NUMBER_OF_ROOMS]} rooms will get you {row["revenue_by_percentage"]}% revenue")
+
+
+def _absolute_sum(row):
+    avg_price = int(round(float(row["avg_price"]), 2) * 1000)
+    return row["2024_prediction"] - avg_price
+
+
+def _diff_by_percantege(row):
+    avg_price = int(round(float(row["avg_price"]), 2) * 1000)
+    percentage = (row["2024_prediction"] / avg_price) * 100
+
+    full_per = str(int(round(percentage, 2)))
+    if len(full_per) > 2:
+        full_per_str = "".join([full_per[1], full_per[2]])
+        return int(full_per_str)
+    return 0
+
+
+def _get_basics(df: DataFrame):
+    min_prediction = df[ColumnsEnums.PREDICTIONS].min().round(2)
+    max_prediction = df[ColumnsEnums.PREDICTIONS].max().round(2)
+    median_prediction = df[ColumnsEnums.PREDICTIONS].median().round(2)
+    avg_prediction = df[ColumnsEnums.PREDICTIONS].mean().round(2)
+
+    return min_prediction, max_prediction, median_prediction, avg_prediction
+
+
+def _predict_by_single_feature_for_revenue(model, mapping: dict, df: DataFrame):
+    options = ["City", "Number of rooms"]
+    selected_filter = _select_single_choice(options, "Revenue by:")
+    df['2024_prediction'] = None
+    main_condition = ""
+
+    main_feature = ColumnsEnums.NUMBER_OF_ROOMS if selected_filter == "Number of rooms" else ColumnsEnums.CITY
+    predictions, main_feature_values, second_feature_values = _predict_by_feature(model, mapping, main_feature,
+                                                                                  "Please select: ")
+    prediction_index = 0
+
+    match selected_filter:
+        case "City":
+            for city in main_feature_values:
+                for room_type in second_feature_values:
+                    city_condition = df[ColumnsEnums.CITY] == city
+                    room_type_condition = df[ColumnsEnums.NUMBER_OF_ROOMS] == room_type
+                    df['2024_prediction'] = np.where(city_condition & room_type_condition,
+                                                     predictions[prediction_index], df['2024_prediction'])
+                    prediction_index += 1
+            main_condition = df[ColumnsEnums.CITY].isin(main_feature_values)
+
+        case "Number of rooms":
+            for room_type in main_feature_values:
+                for city in second_feature_values:
+                    city_condition = df[ColumnsEnums.CITY] == city
+                    room_type_condition = df[ColumnsEnums.NUMBER_OF_ROOMS] == room_type
+                    df['2024_prediction'] = np.where(city_condition & room_type_condition,
+                                                     predictions[prediction_index], df['2024_prediction'])
+                    prediction_index += 1
+            main_condition = df[ColumnsEnums.NUMBER_OF_ROOMS].isin(main_feature_values)
+
+    past_year_condition = df[ColumnsEnums.YEAR] == 2023
+    filtered_df = df[past_year_condition & main_condition]
+
+    df_with_revenue = _add_revenue(filtered_df)
+    return df_with_revenue
 
 
 def predict_by_city(model, mapping: dict):
@@ -78,79 +168,38 @@ def predict_by_district(model, mapping: dict, df: DataFrame):
 
 
 def get_best_revenue_prediction(model, mapping: dict, df: DataFrame):
-    options = ["City", "Number of rooms"]
-    selected_filter = _select_single_choice(options, "Revenue by:")
-    df['2024_prediction'] = None
-    df["revenue_by_percentage"] = None
-    df["revenue_by_absolute_sum"] = None
-    main_condition = ""
-
-    main_feature = ColumnsEnums.NUMBER_OF_ROOMS if selected_filter == "Number of rooms" else ColumnsEnums.CITY
-    predictions, main_feature_values, second_feature_values = _predict_by_feature(model, mapping, main_feature,"Please select: ")
-    prediction_index = 0
-
-    match selected_filter:
-        case "City":
-            for city in main_feature_values:
-                for room_type in second_feature_values:
-                    city_condition = df[ColumnsEnums.CITY] == city
-                    room_type_condition = df[ColumnsEnums.NUMBER_OF_ROOMS] == room_type
-                    df['2024_prediction'] = np.where(city_condition & room_type_condition, predictions[prediction_index], df['2024_prediction'])
-                    prediction_index += 1
-            main_condition = df[ColumnsEnums.CITY].isin(main_feature_values)
-
-        case "Number of rooms":
-            for room_type in main_feature_values:
-                for city in second_feature_values:
-                    city_condition = df[ColumnsEnums.CITY] == city
-                    room_type_condition = df[ColumnsEnums.NUMBER_OF_ROOMS] == room_type
-                    df['2024_prediction'] = np.where(city_condition & room_type_condition, predictions[prediction_index], df['2024_prediction'])
-                    prediction_index += 1
-            main_condition = df[ColumnsEnums.NUMBER_OF_ROOMS].isin(main_feature_values)
+    df_with_revenue: DataFrame = _predict_by_single_feature_for_revenue(model, mapping, df)
+    _show_top_3_revenue(df_with_revenue)
 
 
+def get_apartments_by_user_asset(model, df: DataFrame):
+    is_valid_input = False
+    price_by_user = 0
+    while not is_valid_input:
+        try:
+            user_input = input("Please enter the price in ₪ you are willing to pay, like 850000 or 2800000: ")
+            price_by_user = int(user_input)
+            is_valid_input = True
+        except Exception as e:
+            print("That is not a valid amount. Try again")
+
+    predictions = model.predict(df[["num_of_rooms_encoded", "city_encoded", "year"]])
+    predictions_rounded = list(map(lambda x: int(x.round(2) * 1000), predictions))
+
+    df["2024_prediction"] = predictions_rounded
     past_year_condition = df[ColumnsEnums.YEAR] == 2023
-    filtered_df = df[past_year_condition & main_condition]
+    price_condition = df["2024_prediction"] <= price_by_user
+    df_filtered = df[price_condition & past_year_condition]
 
-    for index, row in filtered_df.iterrows():
-        filtered_df.loc[index, 'revenue_by_absolute_sum'] = _absolute_sum(row)
-        filtered_df.loc[index, 'revenue_by_percentage'] = _diff_by_percantege(row)
+    options = ["Show me top 3 most profitable apartments", "Show me all the apartments I can buy"]
+    user_selection = _select_single_choice(options, "What would you like to see?")
 
-    sorted_df_by_value = filtered_df.sort_values(by='revenue_by_absolute_sum', ascending=False)
-    top_3_rows_by_value = sorted_df_by_value.head(3)
+    if user_selection == "Show me top 3 most profitable apartments":
+        df_with_revenue: DataFrame = _add_revenue(df_filtered)
+        _show_top_3_revenue(df_with_revenue)
 
-    print("\nHere are the top 3 apartments, by absolute revenue")
-    for i, row in top_3_rows_by_value.iterrows():
-        print(f"Apartment in {row[ColumnsEnums.CITY]} with {row[ColumnsEnums.NUMBER_OF_ROOMS]} rooms will get you {row["revenue_by_absolute_sum"]} ₪ revenue")
-
-    sorted_df_by_per = filtered_df.sort_values(by='revenue_by_percentage', ascending=False)
-    top_3_rows_by_per = sorted_df_by_per.head(3)
-
-    print("\nHere are the top 3 apartments, by percentage revenue")
-    for i, row in top_3_rows_by_per.iterrows():
-        print(f"Apartment in {row[ColumnsEnums.CITY]} with {row[ColumnsEnums.NUMBER_OF_ROOMS]} rooms will get you {row["revenue_by_percentage"]}% revenue")
-
-
-
-def _absolute_sum(row):
-    avg_price = int(round(float(row["avg_price"]), 2) * 1000)
-    return row["2024_prediction"] - avg_price
-
-def _diff_by_percantege(row):
-    avg_price = int(round(float(row["avg_price"]), 2) * 1000)
-    percentage = (row["2024_prediction"] / avg_price) * 100
-
-    full_per = str(int(round(percentage, 2)))
-    if len(full_per) > 2:
-        full_per_str = "".join([full_per[1],full_per[2]])
-        return int(full_per_str)
-    return 0
-
-
-def _get_basics(df: DataFrame):
-    min_prediction = df[ColumnsEnums.PREDICTIONS].min().round(2)
-    max_prediction = df[ColumnsEnums.PREDICTIONS].max().round(2)
-    median_prediction = df[ColumnsEnums.PREDICTIONS].median().round(2)
-    avg_prediction = df[ColumnsEnums.PREDICTIONS].mean().round(2)
-
-    return min_prediction, max_prediction, median_prediction, avg_prediction
+    if user_selection == "Show me all the apartments I can buy":
+        filtered_df_no_dup: DataFrame = df_filtered.drop_duplicates(subset=['city', 'num_of_rooms'])
+        for index, row in filtered_df_no_dup.iterrows():
+            print(
+                f"You can buy a {row[ColumnsEnums.NUMBER_OF_ROOMS]} apartment in {row[ColumnsEnums.CITY]} for estimated price of {row['2024_prediction']}")
