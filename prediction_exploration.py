@@ -1,10 +1,11 @@
 import numpy as np
 from pandas import DataFrame
 
+from colors import Bright_Blue, Color_Off, Bright_Magenta, Bright_Green
 from data_encoder import get_unencoded_keys_from_mapping, get_encoded_values
 from model import predict
 from model_enums import TargetEnums, ColumnsEnums
-from utils import _select_multi_choice, _select_single_choice, _select_single_choice_index, goodbye, _sub_menu
+from utils import _select_multi_choice, _select_single_choice, _sub_menu
 
 
 def _filter_df_by_columns(df: DataFrame, cols: list):
@@ -42,19 +43,21 @@ def _show_top_3_revenue(df_with_revenue: DataFrame):
     sorted_df_by_value = df_with_revenue.sort_values(by='revenue_by_absolute_sum', ascending=False)
     top_3_rows_by_value = sorted_df_by_value.head(3)
 
-    print("\nHere are the top 3 apartments, by absolute revenue")
+    print(f"\nHere are the {Bright_Green}TOP 3{Color_Off} apartments, by absolute revenue")
     for i, row in top_3_rows_by_value.iterrows():
         print(
-            f"Apartment in {row[ColumnsEnums.CITY]} with {row[ColumnsEnums.NUMBER_OF_ROOMS]} rooms will get you "
+            f"Apartment in {Bright_Blue}{row[ColumnsEnums.CITY]}{Color_Off} with"
+            f" {Bright_Magenta}{row[ColumnsEnums.NUMBER_OF_ROOMS]}{Color_Off} rooms will get you "
             f"{row["revenue_by_absolute_sum"]} ₪ revenue")
 
     sorted_df_by_per = df_with_revenue.sort_values(by='revenue_by_percentage', ascending=False)
     top_3_rows_by_per = sorted_df_by_per.head(3)
 
-    print("\nHere are the top 3 apartments, by percentage revenue")
+    print(f"\nHere are the {Bright_Green}TOP 3{Color_Off} apartments, by percentage revenue")
     for i, row in top_3_rows_by_per.iterrows():
         print(
-            f"Apartment in {row[ColumnsEnums.CITY]} with {row[ColumnsEnums.NUMBER_OF_ROOMS]} rooms will get you "
+            f"Apartment in {Bright_Blue}{row[ColumnsEnums.CITY]}{Color_Off} with "
+            f"{Bright_Magenta}{row[ColumnsEnums.NUMBER_OF_ROOMS]}{Color_Off} rooms will get you "
             f"{row["revenue_by_percentage"]}% revenue")
 
 
@@ -128,7 +131,7 @@ def predict_by_city(model, mapping: dict):
 
         prediction_index = 0
         for city in cities:
-            print(f"\nHere are the {TargetEnums.YEAR_FOR_PREDICTION} predictions for {city}:")
+            print(f"\nHere are the {TargetEnums.YEAR_FOR_PREDICTION} predictions for {Bright_Blue}{city}{Color_Off}:")
             for room_type in rooms:
                 print(f"{room_type} rooms apartment is predicted to cost: {predictions[prediction_index]} ₪")
                 prediction_index += 1
@@ -143,9 +146,11 @@ def predict_by_number_of_rooms(model, mapping: dict):
 
         prediction_index = 0
         for room_type in rooms:
-            print(f"\nHere are the {TargetEnums.YEAR_FOR_PREDICTION} predictions for {room_type} rooms, by city:")
+            print(f"\nHere are the {TargetEnums.YEAR_FOR_PREDICTION} predictions for "
+                  f"{Bright_Magenta}{room_type}{Color_Off} rooms, by city:")
             for city in cities:
-                print(f"In {city} this type of apartment is predicted to cost: {predictions[prediction_index]} ₪")
+                print(f"In {Bright_Blue}{city}{Color_Off} this type of apartment is predicted to cost: "
+                      f"{predictions[prediction_index]} ₪")
                 prediction_index += 1
 
         _sub_menu(predict_by_number_of_rooms, "Lets see other room types prediction", model, mapping)
@@ -168,9 +173,10 @@ def predict_by_district(model, mapping: dict, df: DataFrame):
 
         prediction_index = 0
         for city in cities_in_district:
-            print(f"\nHere are the {TargetEnums.YEAR_FOR_PREDICTION} predictions for {city}:")
+            print(f"\nHere are the {TargetEnums.YEAR_FOR_PREDICTION} predictions for {Bright_Blue}{city}{Color_Off}:")
             for room_type in list_of_rooms:
-                print(f"{room_type} rooms apartment is predicted to cost: {predictions[prediction_index]} ₪")
+                print(f"{Bright_Magenta}{room_type}{Color_Off} rooms apartment is predicted to cost: "
+                      f"{predictions[prediction_index]} ₪")
                 prediction_index += 1
 
         _sub_menu(predict_by_district, "Lets see other districts prediction", model, mapping, df)
@@ -215,7 +221,7 @@ def get_apartments_by_user_asset(model, df: DataFrame):
             filtered_df_no_dup: DataFrame = df_filtered.drop_duplicates(subset=['city', 'num_of_rooms'])
             for index, row in filtered_df_no_dup.iterrows():
                 print(
-                    f"You can buy a {row[ColumnsEnums.NUMBER_OF_ROOMS]} apartment in {row[ColumnsEnums.CITY]} for "
-                    f"estimated price of {row['2024_prediction']}")
+                    f"You can buy a {row[ColumnsEnums.NUMBER_OF_ROOMS]} apartment in "
+                    f"{Bright_Blue}{row[ColumnsEnums.CITY]}{Color_Off} for estimated price of {row['2024_prediction']}")
 
         _sub_menu(get_apartments_by_user_asset, "Lets see other apartments prediction", model, df)
