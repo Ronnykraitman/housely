@@ -58,3 +58,17 @@ def _filter_by_col_value(df: DataFrame, col_to_filter: str, msg_to_user):
 
     df_filtered: DataFrame = df[df[col_to_filter].isin(list_of_values_to_filter_by)]
     return df_filtered
+
+
+def _sub_menu(func, func_desc, *args):
+    print("\nAny thing else I can help you with?")
+    sub_menu_options = [f"{func_desc}", "Main Menu", "Exit"]
+    index = _select_single_choice_index(sub_menu_options, "Please select:")
+    match index:
+        case 0:
+            func(*args)
+        case 1:
+            from housely import start
+            start()
+        case 2:
+            goodbye()

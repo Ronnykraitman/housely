@@ -4,7 +4,7 @@ from pandas import DataFrame
 from data_encoder import get_unencoded_keys_from_mapping, get_encoded_values
 from model import predict
 from model_enums import TargetEnums, ColumnsEnums
-from utils import _select_multi_choice, _select_single_choice, _select_single_choice_index, goodbye
+from utils import _select_multi_choice, _select_single_choice, _select_single_choice_index, goodbye, _sub_menu
 
 
 def _filter_df_by_columns(df: DataFrame, cols: list):
@@ -133,17 +133,7 @@ def predict_by_city(model, mapping: dict):
                 print(f"{room_type} rooms apartment is predicted to cost: {predictions[prediction_index]} ₪")
                 prediction_index += 1
 
-        print("\nAny thing else I can help you with?")
-        sub_menu_options = ["Lets see other city prediction ", "Main Menu", "Exit"]
-        index = _select_single_choice_index(sub_menu_options, "Please select:")
-        match index:
-            case 0:
-                predict_by_city(model, mapping)
-            case 1:
-                from housely import start
-                start()
-            case 2:
-                goodbye()
+        _sub_menu(predict_by_city, "Lets see other city prediction", model, mapping)
 
 
 def predict_by_number_of_rooms(model, mapping: dict):
@@ -158,17 +148,7 @@ def predict_by_number_of_rooms(model, mapping: dict):
                 print(f"In {city} this type of apartment is predicted to cost: {predictions[prediction_index]} ₪")
                 prediction_index += 1
 
-        print("\nAny thing else I can help you with?")
-        sub_menu_options = ["Lets see other room types prediction ", "Main Menu", "Exit"]
-        index = _select_single_choice_index(sub_menu_options, "Please select:")
-        match index:
-            case 0:
-                predict_by_number_of_rooms(model, mapping)
-            case 1:
-                from housely import start
-                start()
-            case 2:
-                goodbye()
+        _sub_menu(predict_by_number_of_rooms, "Lets see other room types prediction", model, mapping)
 
 
 def predict_by_district(model, mapping: dict, df: DataFrame):
@@ -193,17 +173,7 @@ def predict_by_district(model, mapping: dict, df: DataFrame):
                 print(f"{room_type} rooms apartment is predicted to cost: {predictions[prediction_index]} ₪")
                 prediction_index += 1
 
-        print("\nAny thing else I can help you with?")
-        sub_menu_options = ["Lets see other districts prediction ", "Main Menu", "Exit"]
-        index = _select_single_choice_index(sub_menu_options, "Please select:")
-        match index:
-            case 0:
-                predict_by_district(model, mapping, df)
-            case 1:
-                from housely import start
-                start()
-            case 2:
-                goodbye()
+        _sub_menu(predict_by_district, "Lets see other districts prediction", model, mapping, df)
 
 
 def get_best_revenue_prediction(model, mapping: dict, df: DataFrame):
@@ -211,17 +181,7 @@ def get_best_revenue_prediction(model, mapping: dict, df: DataFrame):
         df_with_revenue: DataFrame = _predict_by_single_feature_for_revenue(model, mapping, df)
         _show_top_3_revenue(df_with_revenue)
 
-        print("\nAny thing else I can help you with?")
-        sub_menu_options = ["Lets see other revenue prediction ", "Main Menu", "Exit"]
-        index = _select_single_choice_index(sub_menu_options, "Please select:")
-        match index:
-            case 0:
-                get_best_revenue_prediction(model, mapping, df)
-            case 1:
-                from housely import start
-                start()
-            case 2:
-                goodbye()
+        _sub_menu(get_best_revenue_prediction, "Lets see other revenue prediction", model, mapping, df)
 
 
 def get_apartments_by_user_asset(model, df: DataFrame):
@@ -258,14 +218,4 @@ def get_apartments_by_user_asset(model, df: DataFrame):
                     f"You can buy a {row[ColumnsEnums.NUMBER_OF_ROOMS]} apartment in {row[ColumnsEnums.CITY]} for "
                     f"estimated price of {row['2024_prediction']}")
 
-        print("\nAny thing else I can help you with?")
-        sub_menu_options = ["Lets see other apartments prediction ", "Main Menu", "Exit"]
-        index = _select_single_choice_index(sub_menu_options, "Please select:")
-        match index:
-            case 0:
-                get_apartments_by_user_asset(model, df)
-            case 1:
-                from housely import start
-                start()
-            case 2:
-                goodbye()
+        _sub_menu(get_apartments_by_user_asset, "Lets see other apartments prediction", model, df)
