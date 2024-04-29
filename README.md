@@ -1,6 +1,6 @@
-# houseLy
+# housely
 
-Welcome to houseLy, your local ML housing price predictor
+Welcome to housely, your local ML housing price predictor
 
 ![Alt text](house.png)
 
